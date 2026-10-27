@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2F7D4F">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<title>Segnala al comune</title>
+<style>
+:root{--g:#2F7D4F;--gd:#1F5A38;--a:#A85F0F;--ad:#8A4D0B;--ink:#1B2A22;--mut:#4A5A50;--bg:#F4F6F1}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,sans-serif}
+main{max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;gap:16px;padding:calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))}
+h1{margin:0;font-size:28px}p{margin:0}.mut{color:var(--mut)}
+button{font:inherit;min-height:48px;border-radius:12px;border:2px solid var(--g);background:#fff;color:var(--gd);font-weight:600;cursor:pointer;padding:0 12px}
+button.on{background:var(--g);color:#fff}
+button.big{min-height:110px;font-size:20px;font-weight:700;border:0;color:#fff;border-radius:14px}
+button.am{border-color:var(--a);color:var(--ad)}button.am.on{background:var(--a);color:#fff}
+button.link{border:0;background:none;align-self:flex-start;padding:0}
+button.go{min-height:56px;border:0;background:var(--g);color:#fff;font-size:18px;font-weight:700;margin-top:auto}
+.row{display:flex;gap:8px}.row>button{flex:1}
+.card,label.f{background:#fff;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--mut)}
+.card b{font-size:16px;color:var(--ink)}
+input,textarea{font:inherit;font-size:16px;border:0;outline:0;padding:0;min-height:28px;background:transparent;color:var(--ink);resize:none}
+label.ph{position:relative;min-height:110px;border:2px dashed #6B7A70;background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden;font-weight:600}
+label.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+label.ph span{position:relative;background:rgba(255,255,255,.92);padding:8px 14px;border-radius:8px}
+label.ph input{position:absolute;opacity:0;width:1px;height:1px}
+.sec{font-size:14px;font-weight:700;color:var(--mut);margin-top:8px}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+const KEY='segnalazioni-v1',TIPI={manutenzione:'Manutenzione',segnaletica:'Segnaletica',altro:'Altro'};
+const load=()=>{try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st.reports))}catch(e){}};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let st={screen:'home',cat:'rifiuti',tipo:'manutenzione',photo:'',pos:'',note:'',email:'',reports:load()};
+const app=document.getElementById('app');
+function sync(){const f=document.getElementById('f');if(!f)return;st.pos=f.pos.value;st.note=f.note.value;st.email=f.email.value}
+function card(r){return `<div class="card"><b>${r.cat==='rifiuti'?'Rifiuti abbandonati':'Strada · '+TIPI[r.tipo]}</b>${esc(r.pos)}<span>${esc(r.date)} · <strong style="color:var(--ad)">${esc(r.status)}</strong>${r.hasPhoto?' · con foto':''}</span></div>`}
+function render(){
+if(st.screen==='home'){app.innerHTML=`<h1>Segnala al comune</h1><p class="mut">Aiutaci a tenere in ordine le strade della città.</p>
+<button class="big" style="background:var(--g)" data-act="new" data-cat="rifiuti">Rifiuti abbandonati</button>
+<button class="big" style="background:var(--a)" data-act="new" data-cat="strada">Problema stradale</button>
+<div class="sec">LE TUE SEGNALAZIONI</div>${st.reports.length?st.reports.map(card).join(''):'<p class="mut">Nessuna segnalazione inviata.</p>'}`}
+else if(st.screen==='form'){const s=st.cat==='strada';app.innerHTML=`<button class="link" data-act="home">← Indietro</button><h1>Nuova segnalazione</h1>
+<div class="row"><button class="${s?'':'on'}" data-act="cat" data-v="rifiuti">Rifiuti</button><button class="${s?'on':''}" data-act="cat" data-v="strada">Strada</button></div>
+${s?`<div class="mut" style="font-size:14px">Tipo di segnalazione stradale</div><div class="row">${Object.keys(TIPI).map(k=>`<button class="am ${st.tipo===k?'on':''}" data-act="tipo" data-v="${k}">${TIPI[k]}</button>`).join('')}</div>`:''}
+<form id="f" style="display:contents">
+<label class="ph">${st.photo?`<img src="${st.photo}" alt="Anteprima della foto">`:''}<span>${st.photo?'Cambia foto':'Scatta o aggiungi una foto'}</span><input type="file" accept="image/*" id="ph"></label>
+<label class="f">Posizione (via e numero civico)<input name="pos" required placeholder="Es. Via Roma 12" value="${esc(st.pos)}"></label>
+<label class="f">Note (facoltativo)<input name="note" placeholder="Descrivi brevemente" value="${esc(st.note)}"></label>
+<label class="f">Email di riferimento per essere contattato<input name="email" type="email" required placeholder="nome@esempio.it" value="${esc(st.email)}"></label>
+<button class="go" type="submit">Invia segnalazione</button></form>`}
+else{app.innerHTML=`<h1 style="margin-top:64px">Segnalazione inviata</h1><p>Grazie! Il comune la verificherà e ti aggiornerà via email.</p><div class="card"><b>Stato</b>Inviata → In carico → In lavorazione → Risolta</div><button class="go" data-act="home">Torna alla home</button>`}}
+function shrink(file,cb){const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,800/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.8))};i.src=r.result};r.readAsDataURL(file)}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;sync();const a=b.dataset.act;
+if(a==='new'){st.cat=b.dataset.cat;st.screen='form'}else if(a==='home')st.screen='home';else if(a==='cat')st.cat=b.dataset.v;else if(a==='tipo')st.tipo=b.dataset.v;render()});
+document.addEventListener('change',e=>{if(e.target.id!=='ph'||!e.target.files[0])return;sync();shrink(e.target.files[0],d=>{st.photo=d;render()})});
+document.addEventListener('submit',e=>{e.preventDefault();sync();
+st.reports.unshift({cat:st.cat,tipo:st.tipo,pos:st.pos,note:st.note,email:st.email,status:'Inviata',date:new Date().toLocaleDateString('it-IT'),hasPhoto:!!st.photo});save();
+st.photo='';st.pos='';st.note='';st.screen='done';render()});
+render();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
